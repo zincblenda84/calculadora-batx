@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de notes de Batxillerat i PAU</title>
+  <style>
+    :root{
+      --bg:#f6f7fb;--card:#ffffff;--ink:#172033;--muted:#667085;--line:#d9dee8;--head:#edf2ff;--accent:#365cff;--soft:#eef3ff;--warn:#fff7e6;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+    header{padding:28px 18px 14px;max-width:1200px;margin:auto} h1{margin:0 0 8px;font-size:clamp(24px,3vw,38px)} p{margin:0;color:var(--muted);line-height:1.5}
+    main{max-width:1200px;margin:auto;padding:12px 18px 40px}.grid{display:grid;grid-template-columns:1fr;gap:18px}@media(min-width:980px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
+    section{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(20,30,60,.06);padding:18px;overflow:auto}
+    h2{font-size:20px;margin:0 0 12px}.sub{font-size:14px;color:var(--muted);margin-bottom:12px}.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:10px 0 14px}.control{background:var(--soft);border:1px solid var(--line);padding:10px 12px;border-radius:12px}.control label{display:block;font-weight:600;margin-bottom:6px}.control.inline label{display:inline;margin:0 8px 0 0;font-weight:600}
+    select,input[type=number]{font:inherit;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:white;min-width:90px}input[type=checkbox]{transform:scale(1.25);margin-right:8px}.hidden{display:none!important}
+    table{border-collapse:separate;border-spacing:0;width:100%;min-width:620px;font-size:14px}th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px;text-align:center}th:first-child,td:first-child{border-left:1px solid var(--line);text-align:left}thead th{background:var(--head);font-weight:700;border-top:1px solid var(--line)}thead th:first-child{border-top-left-radius:12px}thead th:last-child{border-top-right-radius:12px}tbody tr:last-child td:first-child{border-bottom-left-radius:12px}tbody tr:last-child td:last-child{border-bottom-right-radius:12px}.total-row td{background:#f8fafc;font-weight:700}.muted{color:var(--muted)}.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.tile{background:linear-gradient(180deg,#fff,#f9fbff);border:1px solid var(--line);border-radius:16px;padding:16px}.tile .label{color:var(--muted);font-size:14px}.tile .value{font-size:30px;font-weight:800;margin-top:6px}.tile.big{border-color:#b8c6ff;background:#f4f7ff}.note{background:var(--warn);border:1px solid #ffd68a;border-radius:14px;padding:12px;color:#5c4300;font-size:14px}.small{font-size:12px;color:var(--muted)}.right{text-align:right}.pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#eef3ff;color:#2f4ed8;font-weight:700;font-size:12px}.btn{border:none;border-radius:12px;background:var(--accent);color:white;padding:10px 14px;font-weight:700;cursor:pointer}.btn.secondary{background:#475467}.row-hidden{display:none}.readonly{background:#f4f4f5;color:#475467}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Calculadora de notes de Batxillerat i PAU</h1>
+  <p>Introdueix les notes de 1r, 2n i selectivitat. El full calcula mitjanes, hores cursades, nota d’accés i nota d’admissió. Les notes es desen només al navegador.</p>
+</header>
+<main>
+  <div class="grid">
+    <section class="wide">
+      <h2>Resultats principals</h2>
+      <div class="result">
+        <div class="tile"><div class="label">Mitjana 1r Batxillerat</div><div class="value" id="resFirst">—</div></div>
+        <div class="tile"><div class="label">Mitjana 2n Batxillerat</div><div class="value" id="resSecond">—</div></div>
+        <div class="tile"><div class="label">Mitjana Batxillerat</div><div class="value" id="resBatx">—</div></div>
+        <div class="tile"><div class="label">Fase d’accés PAU</div><div class="value" id="resPAUBase">—</div></div>
+        <div class="tile big"><div class="label">Nota d’accés / admissió estimada</div><div class="value" id="resFinal">—</div></div>
+      </div>
+      <p class="small" style="margin-top:10px">La part d’admissió agafa automàticament les dues millors notes de modalitat introduïdes i les pondera com a 0,2 + 0,2.</p>
+    </section>
+
+    <section class="wide">
+      <h2>1r de Batxillerat</h2>
+      <p class="sub">Introdueix les notes trimestrals. La nota final es calcula com a mitjana dels trimestres.</p>
+      <div id="firstTable"></div>
+      <p class="small right">Hores setmanals: <strong id="hoursFirst">30</strong> · Hores anuals estimades: <strong id="annualFirst">1020</strong> (34 setmanes)</p>
+    </section>
+
+    <section class="wide">
+      <h2>2n de Batxillerat</h2>
+      <div class="controls">
+        <div class="control inline"><label><input type="checkbox" id="takesOptional">Faré tria d’alguna optativa a 2n</label></div>
+        <div class="control optionalOnly hidden" id="typeControl"><label>Optativa triada</label><select id="optionalType"><option value="">—</option><option value="ods">ODS</option><option value="estada">Estada a l’Empresa</option></select></div>
+        <div class="control optionalOnly hidden" id="discardControl"><label>Matèria de modalitat descartada</label><select id="discardSubject"><option value="">—</option><option value="Física">Física</option><option value="Química o Dibuix Tècnic">Química o Dibuix Tècnic</option><option value="Tecnologia">Tecnologia</option></select></div>
+      </div>
+      <div class="note optionalOnly hidden">Si tries ODS o Estada a l’Empresa, has de descartar una matèria de modalitat. La matèria descartada desapareix del càlcul.</div>
+      <div style="height:10px"></div>
+      <div id="secondTable"></div>
+      <p class="small right">Hores setmanals visibles: <strong id="hoursSecond">—</strong> · Hores anuals estimades: <strong id="annualSecond">—</strong> (32 setmanes)</p>
+    </section>
+
+    <section class="wide">
+      <h2>Selectivitat / PAU</h2>
+      <p class="sub">La fase d’accés es calcula amb les cinc matèries comunes. La part de modalitat agafa les dues millors notes de F/G/H/I.</p>
+      <div id="pauTable"></div>
+    </section>
+
+    <section class="wide">
+      <h2>Accions</h2>
+      <button class="btn" id="saveBtn">Desar dades al navegador</button>
+      <button class="btn secondary" id="resetBtn">Restablir valors a 5</button>
+      <p class="small" style="margin-top:10px">Per compartir-lo amb alumnes: penja aquest fitxer HTML al Classroom o al Drive. També el pots allotjar com una pàgina web estàtica.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+const firstSubjects = [
+  ['Català',2],['Castellà',2],['Anglès',3],['Filosofia',2],['Educació física',2],['Matemàtiques',3],['Tecnologia',3],['Química o Dibuix Tècnic',3],['Física',3],['Optativa 1',3],['Optativa 2',3]
+];
+const secondBase = [
+  ['Català',2,'trimestres'],['Castellà',2,'trimestres'],['Anglès',3,'trimestres'],['Història de la Filosofia',3,'trimestres'],['Història',3,'trimestres'],['Matemàtiques',4,'trimestres'],['Física',4,'trimestres'],['Química o Dibuix Tècnic',4,'trimestres'],['Tecnologia',4,'trimestres'],['Tutoria',1,'none'],['Treball de Recerca',0,'single'],['Estada a l’Empresa',4,'single','estada'],['ODS',4,'trimestres','ods']
+];
+const pauCommon = ['Català','Castellà','Anglès','Història / Història de la Filosofia','Matemàtiques'];
+const pauMod = ['Física','Química','Dibuix Tècnic','Tecnologia'];
+function clamp(v){ v=parseFloat(v); return isNaN(v)?0:Math.max(0,Math.min(10,v)); }
+function fmt(v){ return (Math.round(v*100)/100).toFixed(2).replace('.',','); }
+function input(id, val=5){ return `<input type="number" min="0" max="10" step="0.1" value="${val}" data-id="${id}">`; }
+function avg(arr){ const nums=arr.map(clamp).filter(v=>!isNaN(v)); return nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0; }
+function renderFirst(){
+  let h='<table><thead><tr><th>Matèria</th><th>Hores</th><th>1r trim.</th><th>2n trim.</th><th>3r trim.</th><th>Final</th></tr></thead><tbody>';
+  firstSubjects.forEach((s,i)=>{h+=`<tr><td>${s[0]}</td><td>${s[1]}</td><td>${input(`f_${i}_1`)}</td><td>${input(`f_${i}_2`)}</td><td>${input(`f_${i}_3`)}</td><td class="readonly" id="f_${i}_final">—</td></tr>`});
+  h+='<tr class="total-row"><td>MITJANA</td><td></td><td id="firstAvg1">—</td><td id="firstAvg2">—</td><td id="firstAvg3">—</td><td id="firstAvgFinal">—</td></tr></tbody></table>';
+  document.getElementById('firstTable').innerHTML=h;
+}
+function renderSecond(){
+  let h='<table><thead><tr><th>Matèria</th><th>Hores</th><th>1r trim.</th><th>2n trim.</th><th>3r trim.</th><th>Final</th></tr></thead><tbody>';
+  secondBase.forEach((s,i)=>{
+    const extra=s[3]||'';
+    h+=`<tr data-subject="${s[0]}" data-extra="${extra}" id="srow_${i}"><td>${s[0]}</td><td class="hours">${s[1]}</td>`;
+    if(s[2]==='none') h+='<td class="muted">—</td><td class="muted">—</td><td class="muted">—</td><td class="muted">—</td>';
+    else if(s[2]==='single') h+=`<td colspan="3" class="muted">Qualificació única</td><td>${input(`s_${i}_final`)}</td>`;
+    else h+=`<td>${input(`s_${i}_1`)}</td><td>${input(`s_${i}_2`)}</td><td>${input(`s_${i}_3`)}</td><td class="readonly" id="s_${i}_final">—</td>`;
+    h+='</tr>';
+  });
+  h+='<tr class="total-row"><td>MITJANA</td><td></td><td id="secondAvg1">—</td><td id="secondAvg2">—</td><td id="secondAvg3">—</td><td id="secondAvgFinal">—</td></tr></tbody></table>';
+  document.getElementById('secondTable').innerHTML=h;
+}
+function renderPAU(){
+  let h='<table><thead><tr><th colspan="5">Matèries comunes / fase d’accés</th><th colspan="4">Matèries de modalitat / admissió</th></tr><tr>';
+  pauCommon.forEach(x=>h+=`<th>${x}</th>`); pauMod.forEach(x=>h+=`<th>${x}</th>`); h+='</tr></thead><tbody><tr>';
+  pauCommon.forEach((x,i)=>h+=`<td>${input(`p_c_${i}`)}</td>`); pauMod.forEach((x,i)=>h+=`<td>${input(`p_m_${i}`)}</td>`); h+='</tr></tbody></table>';
+  document.getElementById('pauTable').innerHTML=h;
+}
+function getVal(id){ const el=document.querySelector(`[data-id="${id}"]`); return el?clamp(el.value):0; }
+function calc(){
+  // optional visibility
+  const takes=document.getElementById('takesOptional').checked;
+  document.querySelectorAll('.optionalOnly').forEach(el=>el.classList.toggle('hidden',!takes));
+  const opt=document.getElementById('optionalType').value;
+  const discard=document.getElementById('discardSubject').value;
+  secondBase.forEach((s,i)=>{
+    const tr=document.getElementById(`srow_${i}`); if(!tr)return;
+    tr.classList.remove('row-hidden');
+    if(s[3]==='ods') tr.classList.toggle('row-hidden',!(takes && opt==='ods'));
+    if(s[3]==='estada') tr.classList.toggle('row-hidden',!(takes && opt==='estada'));
+    if(takes && discard && s[0]===discard) tr.classList.add('row-hidden');
+  });
+  // first avgs
+  let firstFinals=[], ftrim=[[],[],[]];
+  firstSubjects.forEach((s,i)=>{
+    const vals=[getVal(`f_${i}_1`),getVal(`f_${i}_2`),getVal(`f_${i}_3`)];
+    vals.forEach((v,j)=>ftrim[j].push(v));
+    const a=avg(vals); firstFinals.push(a); document.getElementById(`f_${i}_final`).textContent=fmt(a);
+  });
+  const firstAvg=avg(firstFinals);
+  document.getElementById('firstAvg1').textContent=fmt(avg(ftrim[0]));document.getElementById('firstAvg2').textContent=fmt(avg(ftrim[1]));document.getElementById('firstAvg3').textContent=fmt(avg(ftrim[2]));document.getElementById('firstAvgFinal').textContent=fmt(firstAvg);
+  // second avgs only visible, excluding Tutoria and zero-hour? include all visible grade rows with grade values like Excel subtotal F27:F41 ignores blanks; tutoria no grade
+  let secondFinals=[], strim=[[],[],[]], hours=0;
+  secondBase.forEach((s,i)=>{
+    const tr=document.getElementById(`srow_${i}`); if(!tr || tr.classList.contains('row-hidden')) return;
+    hours += s[1];
+    if(s[2]==='none') return;
+    if(s[2]==='single') { secondFinals.push(getVal(`s_${i}_final`)); return; }
+    const vals=[getVal(`s_${i}_1`),getVal(`s_${i}_2`),getVal(`s_${i}_3`)]; vals.forEach((v,j)=>strim[j].push(v)); const a=avg(vals); secondFinals.push(a); document.getElementById(`s_${i}_final`).textContent=fmt(a);
+  });
+  const secondAvg=avg(secondFinals);
+  document.getElementById('secondAvg1').textContent=fmt(avg(strim[0]));document.getElementById('secondAvg2').textContent=fmt(avg(strim[1]));document.getElementById('secondAvg3').textContent=fmt(avg(strim[2]));document.getElementById('secondAvgFinal').textContent=fmt(secondAvg);
+  document.getElementById('hoursSecond').textContent=hours; document.getElementById('annualSecond').textContent=hours*32;
+  const batx=avg([firstAvg,secondAvg]);
+  // PAU
+  const pauBase=avg(pauCommon.map((_,i)=>getVal(`p_c_${i}`)));
+  const mods=pauMod.map((_,i)=>getVal(`p_m_${i}`)).sort((a,b)=>b-a).slice(0,2);
+  const extra=mods.reduce((a,b)=>a+b,0)*0.2; // 0.2*M1 + 0.2*M2
+  const acces=0.6*batx+0.4*pauBase;
+  const final=acces+extra;
+  document.getElementById('resFirst').textContent=fmt(firstAvg);document.getElementById('resSecond').textContent=fmt(secondAvg);document.getElementById('resBatx').textContent=fmt(batx);document.getElementById('resPAUBase').textContent=fmt(pauBase);document.getElementById('resFinal').textContent=fmt(final);
+}
+function save(){ const data={}; document.querySelectorAll('input[type=number]').forEach(el=>data[el.dataset.id]=el.value); data.takes=document.getElementById('takesOptional').checked; data.opt=document.getElementById('optionalType').value; data.discard=document.getElementById('discardSubject').value; localStorage.setItem('calcBatxData',JSON.stringify(data)); }
+function load(){ const raw=localStorage.getItem('calcBatxData'); if(!raw)return; try{const data=JSON.parse(raw); Object.entries(data).forEach(([k,v])=>{const el=document.querySelector(`[data-id="${k}"]`); if(el)el.value=v;}); document.getElementById('takesOptional').checked=!!data.takes; document.getElementById('optionalType').value=data.opt||''; document.getElementById('discardSubject').value=data.discard||'';}catch(e){} }
+function reset(){ document.querySelectorAll('input[type=number]').forEach(el=>el.value=5); document.getElementById('takesOptional').checked=false; document.getElementById('optionalType').value=''; document.getElementById('discardSubject').value=''; calc(); save(); }
+renderFirst();renderSecond();renderPAU();load();calc();
+document.addEventListener('input',()=>{calc();}); document.addEventListener('change',()=>{calc();}); document.getElementById('saveBtn').addEventListener('click',()=>{save();alert('Dades desades en aquest navegador.');}); document.getElementById('resetBtn').addEventListener('click',reset);
+</script>
+</body>
+</html>
