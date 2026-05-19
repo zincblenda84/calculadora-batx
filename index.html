@@ -312,6 +312,15 @@
   </footer>
 
   <script>
+function fmt2(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "0,00";
+  return n.toLocaleString("ca-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
 function round2(num) {
   return Math.round((num + Number.EPSILON) * 100) / 100;
 }
@@ -349,10 +358,7 @@ function round2(num) {
       return values.every(v => v !== null);
     }
 
-    function format(n, digits = 3) {
-      if (n === null || Number.isNaN(n)) return '—';
-      return n.toFixed(digits).replace('.', ',');
-    }
+    function format(value) { return fmt2(value); }
 
     function calculate() {
       const batx1 = parseNota('batx1');
