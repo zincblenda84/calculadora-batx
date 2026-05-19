@@ -229,7 +229,11 @@
     <section class="grid">
       <div class="card">
         <h2>1. Mitjana de Batxillerat</h2>
-        <p class="hint">Introdueix la mitjana final de cada curs i la nota del Treball de Recerca.</p>
+        <p class="hint">Si ja tens la mitjana oficial de Batxillerat, introdueix-la directament. Si no, el programa la calcula a partir de 1r, 2n, el Treball de Recerca i el pràcticum.</p>
+        <div class="row">
+          <label for="batxOficial">Mitjana oficial de Batxillerat</label>
+          <input id="batxOficial" type="number" min="0" max="10" step="0.01" placeholder="Opcional" />
+        </div>
         <div class="row">
           <label for="batx1">Mitjana de 1r de Batxillerat</label>
           <input id="batx1" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
@@ -237,6 +241,13 @@
         <div class="row">
           <label for="batx2">Mitjana de 2n de Batxillerat</label>
           <input id="batx2" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
+        </div>
+        <div class="row">
+          <label for="haPracticum">Ha cursat pràcticum?</label>
+          <select id="haPracticum">
+            <option value="no">No</option>
+            <option value="si">Sí</option>
+          </select>
         </div>
         <div class="row">
           <label for="tr">Nota del Treball de Recerca</label>
@@ -273,6 +284,7 @@
           <input id="objectiu" type="number" min="0" max="14" step="0.001" placeholder="Ex. 11.75" />
         </div>
         <div class="formula">
+          Si no hi ha mitjana oficial: Batx = 90% mitjana ponderada de 1r i 2n + 10% TR<br>
           Nota accés = 60% Batxillerat + 40% Fase comuna PAU<br>
           Nota admissió = Nota accés + dues millors ponderacions
         </div>
@@ -288,7 +300,7 @@
           <div class="result">
             <strong>Mitjana Batxillerat</strong>
             <div class="value" id="resBatx">—</div>
-            <div class="small">90% mitjana de 1r i 2n + 10% Treball de Recerca.</div>
+            <div class="small" id="detallBatx">Calculada segons matèries cursades o introduïda directament.</div>
           </div>
           <div class="result">
             <strong>Fase comuna PAU</strong>
@@ -330,7 +342,7 @@ function round2(num) {
 }
 
     const ids = [
-      'batx1','batx2','tr','cat','cast','ang','hist','mates',
+      'batxOficial','batx1','batx2','haPracticum','tr','cat','cast','ang','hist','mates',
       'mod1','mod2','mod3','pond1','pond2','pond3','objectiu'
     ];
 
@@ -365,13 +377,26 @@ function round2(num) {
     function format(value) { return fmt2(value); }
 
     function calculate() {
+      const batxOficial = parseNota('batxOficial');
       const batx1 = parseNota('batx1');
       const batx2 = parseNota('batx2');
       const tr = parseNota('tr');
-      const mitjanaCursos = allFilled([batx1, batx2]) ? (batx1 + batx2) / 2 : avg([batx1, batx2]);
-      const mitjanaBatx = (mitjanaCursos !== null && tr !== null)
+      const haPracticum = $('haPracticum').value === 'si';
+      const pes1 = haPracticum ? 11 : 10;
+      const pes2 = haPracticum ? 9 : 8;
+      const totalPesos = pes1 + pes2;
+
+      let mitjanaCursos = null;
+      if (allFilled([batx1, batx2])) {
+        mitjanaCursos = (pes1 * batx1 + pes2 * batx2) / totalPesos;
+      } else {
+        mitjanaCursos = avg([batx1, batx2]);
+      }
+
+      const mitjanaBatxCalculada = (mitjanaCursos !== null && tr !== null)
         ? (0.9 * mitjanaCursos + 0.1 * tr)
         : mitjanaCursos;
+      const mitjanaBatx = batxOficial !== null ? batxOficial : mitjanaBatxCalculada;
 
       const comunes = ['cat','cast','ang','hist','mates'].map(parseNota);
       const pauComuna = allFilled(comunes) ? avg(comunes) : null;
@@ -393,6 +418,14 @@ function round2(num) {
       const notaFinal = notaAcces !== null ? Math.min(14, notaAcces + extra) : null;
 
       $('resBatx').textContent = format(mitjanaBatx);
+      if (batxOficial !== null) {
+        $('detallBatx').textContent = "S'ha utilitzat la mitjana oficial introduïda.";
+      } else if (allFilled([batx1, batx2])) {
+        const textPesos = haPracticum ? 'amb pràcticum: 11 matèries a 1r i 9 a 2n' : 'sense pràcticum: 10 matèries a 1r i 8 a 2n';
+        $('detallBatx').textContent = `Calculada ${textPesos}, més el 10% del Treball de Recerca si està informat.`;
+      } else {
+        $('detallBatx').textContent = 'Introdueix la mitjana oficial o les mitjanes de 1r i 2n.';
+      }
       $('resPau').textContent = format(pauComuna);
       $('resAcces').textContent = format(notaAcces);
       $('resFinal').textContent = format(notaFinal);
@@ -428,6 +461,7 @@ function round2(num) {
     $('reset').addEventListener('click', () => {
       ids.forEach(id => {
         if (id.startsWith('pond')) $(''+id).value = '0.2';
+        else if (id === 'haPracticum') $(''+id).value = 'no';
         else $(''+id).value = '';
       });
       calculate();
@@ -435,7 +469,8 @@ function round2(num) {
 
     $('exemple').addEventListener('click', () => {
       const example = {
-        batx1: 7.5, batx2: 8.1, tr: 8.0, cat: 7.2, cast: 7.4, ang: 8.5, hist: 7.8, mates: 8.0,
+        batxOficial: '', batx1: 7.5, batx2: 8.1, haPracticum: 'si', tr: 8.0,
+        cat: 7.2, cast: 7.4, ang: 8.5, hist: 7.8, mates: 8.0,
         mod1: 8.5, pond1: 0.2, mod2: 7.6, pond2: 0.2, mod3: 9.0, pond3: 0.1,
         objectiu: 11.2
       };
