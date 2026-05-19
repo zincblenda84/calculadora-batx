@@ -238,6 +238,10 @@
           <label for="batx2">Mitjana de 2n de Batxillerat</label>
           <input id="batx2" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
         </div>
+        <div class="row">
+          <label for="tr">Nota del Treball de Recerca</label>
+          <input id="tr" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
+        </div>
       </div>
 
       <div class="card">
@@ -284,7 +288,7 @@
           <div class="result">
             <strong>Mitjana Batxillerat</strong>
             <div class="value" id="resBatx">—</div>
-            <div class="small">90% mitjana de batxillerat + 10% treball de recerca.</div>
+            <div class="small">90% mitjana de 1r i 2n + 10% Treball de Recerca.</div>
           </div>
           <div class="result">
             <strong>Fase comuna PAU</strong>
@@ -326,7 +330,7 @@ function round2(num) {
 }
 
     const ids = [
-      'batx1','batx2','cat','cast','ang','hist','mates',
+      'batx1','batx2','tr','cat','cast','ang','hist','mates',
       'mod1','mod2','mod3','pond1','pond2','pond3','objectiu'
     ];
 
@@ -363,7 +367,11 @@ function round2(num) {
     function calculate() {
       const batx1 = parseNota('batx1');
       const batx2 = parseNota('batx2');
-      const mitjanaBatx = allFilled([batx1, batx2]) ? (batx1 + batx2) / 2 : avg([batx1, batx2]);
+      const tr = parseNota('tr');
+      const mitjanaCursos = allFilled([batx1, batx2]) ? (batx1 + batx2) / 2 : avg([batx1, batx2]);
+      const mitjanaBatx = (mitjanaCursos !== null && tr !== null)
+        ? (0.9 * mitjanaCursos + 0.1 * tr)
+        : mitjanaCursos;
 
       const comunes = ['cat','cast','ang','hist','mates'].map(parseNota);
       const pauComuna = allFilled(comunes) ? avg(comunes) : null;
@@ -427,7 +435,7 @@ function round2(num) {
 
     $('exemple').addEventListener('click', () => {
       const example = {
-        batx1: 7.5, batx2: 8.1, cat: 7.2, cast: 7.4, ang: 8.5, hist: 7.8, mates: 8.0,
+        batx1: 7.5, batx2: 8.1, tr: 8.0, cat: 7.2, cast: 7.4, ang: 8.5, hist: 7.8, mates: 8.0,
         mod1: 8.5, pond1: 0.2, mod2: 7.6, pond2: 0.2, mod3: 9.0, pond3: 0.1,
         objectiu: 11.2
       };
