@@ -222,7 +222,7 @@
 <body>
   <header>
     <h1>Calculadora de notes de Batxillerat i PAU</h1>
-    <p>Introdueix les mitjanes i possibles notes de selectivitat. Els resultats apareixen a la part superior de la pàgina.</p>
+    <p>Introdueix la mitjana oficial de Batxillerat i les possibles notes de selectivitat. Els resultats apareixen a la part superior de la pàgina.</p>
   </header>
 
   <main>
@@ -233,7 +233,7 @@
           <div class="result">
             <strong>Mitjana Batxillerat</strong>
             <div class="value" id="resBatx">—</div>
-            <div class="small" id="detallBatx">Calculada segons matèries cursades o introduïda directament.</div>
+            <div class="small" id="detallBatx">S’utilitza directament la mitjana oficial introduïda.</div>
           </div>
           <div class="result">
             <strong>Fase comuna PAU</strong>
@@ -256,29 +256,10 @@
 
       <div class="card">
         <h2>1. Mitjana de Batxillerat</h2>
-        <p class="hint">Si ja tens la mitjana oficial de Batxillerat, introdueix-la directament. Si no, el programa la calcula a partir de 1r, 2n, el Treball de Recerca i el pràcticum.</p>
+        <p class="hint">Introdueix només la mitjana oficial de Batxillerat que apareix a l’informe o al programa del centre.</p>
         <div class="row">
           <label for="batxOficial">Mitjana oficial de Batxillerat</label>
-          <input id="batxOficial" type="number" min="0" max="10" step="0.01" placeholder="Opcional" />
-        </div>
-        <div class="row">
-          <label for="batx1">Mitjana de 1r de Batxillerat</label>
-          <input id="batx1" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
-        </div>
-        <div class="row">
-          <label for="batx2">Mitjana de 2n de Batxillerat</label>
-          <input id="batx2" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
-        </div>
-        <div class="row">
-          <label for="haPracticum">Ha cursat pràcticum?</label>
-          <select id="haPracticum">
-            <option value="no">No</option>
-            <option value="si">Sí</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="tr">Nota del Treball de Recerca</label>
-          <input id="tr" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
+          <input id="batxOficial" type="number" min="0" max="10" step="0.01" placeholder="0-10" />
         </div>
       </div>
 
@@ -311,7 +292,6 @@
           <input id="objectiu" type="number" min="0" max="14" step="0.001" placeholder="Ex. 11.75" />
         </div>
         <div class="formula">
-          Si no hi ha mitjana oficial: Batx = 90% mitjana ponderada de 1r i 2n + 10% TR<br>
           Nota accés = 60% Batxillerat + 40% Fase comuna PAU<br>
           Nota admissió = Nota accés + dues millors ponderacions
         </div>
@@ -331,8 +311,9 @@
 
   <script>
 function fmt2(value) {
+  if (value === null || value === undefined || value === '') return "—";
   const n = Number(value);
-  if (!Number.isFinite(n)) return "0,00";
+  if (!Number.isFinite(n)) return "—";
   return n.toLocaleString("ca-ES", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -344,7 +325,7 @@ function round2(num) {
 }
 
     const ids = [
-      'batxOficial','batx1','batx2','haPracticum','tr','cat','cast','ang','hist','mates',
+      'batxOficial','cat','cast','ang','hist','mates',
       'mod1','mod2','mod3','pond1','pond2','pond3','objectiu'
     ];
 
@@ -379,26 +360,7 @@ function round2(num) {
     function format(value) { return fmt2(value); }
 
     function calculate() {
-      const batxOficial = parseNota('batxOficial');
-      const batx1 = parseNota('batx1');
-      const batx2 = parseNota('batx2');
-      const tr = parseNota('tr');
-      const haPracticum = $('haPracticum').value === 'si';
-      const pes1 = haPracticum ? 11 : 10;
-      const pes2 = haPracticum ? 9 : 8;
-      const totalPesos = pes1 + pes2;
-
-      let mitjanaCursos = null;
-      if (allFilled([batx1, batx2])) {
-        mitjanaCursos = (pes1 * batx1 + pes2 * batx2) / totalPesos;
-      } else {
-        mitjanaCursos = avg([batx1, batx2]);
-      }
-
-      const mitjanaBatxCalculada = (mitjanaCursos !== null && tr !== null)
-        ? (0.9 * mitjanaCursos + 0.1 * tr)
-        : mitjanaCursos;
-      const mitjanaBatx = batxOficial !== null ? batxOficial : mitjanaBatxCalculada;
+      const mitjanaBatx = parseNota('batxOficial');
 
       const comunes = ['cat','cast','ang','hist','mates'].map(parseNota);
       const pauComuna = allFilled(comunes) ? avg(comunes) : null;
@@ -420,14 +382,9 @@ function round2(num) {
       const notaFinal = notaAcces !== null ? Math.min(14, notaAcces + extra) : null;
 
       $('resBatx').textContent = format(mitjanaBatx);
-      if (batxOficial !== null) {
-        $('detallBatx').textContent = "S'ha utilitzat la mitjana oficial introduïda.";
-      } else if (allFilled([batx1, batx2])) {
-        const textPesos = haPracticum ? 'amb pràcticum: 11 matèries a 1r i 9 a 2n' : 'sense pràcticum: 10 matèries a 1r i 8 a 2n';
-        $('detallBatx').textContent = `Calculada ${textPesos}, més el 10% del Treball de Recerca si està informat.`;
-      } else {
-        $('detallBatx').textContent = 'Introdueix la mitjana oficial o les mitjanes de 1r i 2n.';
-      }
+      $('detallBatx').textContent = mitjanaBatx !== null
+        ? "S'ha utilitzat la mitjana oficial introduïda."
+        : 'Introdueix la mitjana oficial de Batxillerat.';
       $('resPau').textContent = format(pauComuna);
       $('resAcces').textContent = format(notaAcces);
       $('resFinal').textContent = format(notaFinal);
@@ -463,7 +420,6 @@ function round2(num) {
     $('reset').addEventListener('click', () => {
       ids.forEach(id => {
         if (id.startsWith('pond')) $(''+id).value = '0.2';
-        else if (id === 'haPracticum') $(''+id).value = 'no';
         else $(''+id).value = '';
       });
       calculate();
